@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import it.polito.tdp.artsmia.model.Adiacenza;
 import it.polito.tdp.artsmia.model.ArtObject;
 
 public class ArtsmiaDAO {
@@ -44,6 +45,68 @@ public class ArtsmiaDAO {
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
+	}
+
+	public int getPeso(ArtObject ao1, ArtObject ao2) {
+		
+		String sql = "select count(*) as peso " + 
+				"from exhibition_objects as eo1, exhibition_objects as eo2" + 
+				"where eo1.exhibition_id = eo2.exhibition_id and" + 
+				"eo1.object_id = ? and eo2.object_id = ?";
+		
+		Connection conn = DBConnect.getConnection();
+		
+		try {
+			
+			PreparedStatement st = conn.prepareStatement(sql);
+			st.setInt(1, ao1.getId());
+			st.setInt(2, ao2.getId());
+			
+			ResultSet rs = st.executeQuery();
+			
+			if(rs.next()) {
+				int peso = rs.getInt("peso");
+				conn.close();
+				return peso;
+			}
+			
+			conn.close();
+			
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		
+		return -1;
+	}
+	
+	public List<Adiacenza> getAdiacenze() {
+		
+		List<Adiacenza> adiacenze = new ArrayList<>();
+		
+		String sql = "select eo1.object_id as obj1, eo2.object_id as obj2, count(*) as peso " + 
+				"from exhibition_objects as eo1, exhibition_objects as eo2 " + 
+				"where eo1.exhibition_id = eo2.exhibition_id and " + 
+				"			eo2.object_id > eo1.object_id " + 
+				"group by eo1.object_id, eo2.object_id ";
+		Connection conn = DBConnect.getConnection();
+		
+		try {
+			PreparedStatement st = conn.prepareStatement(sql);
+			
+			ResultSet rs = st.executeQuery();
+			
+			while(rs.next()) {
+				adiacenze.add(new Adiacenza(rs.getInt("obj1"), rs.getInt("obj2"), rs.getInt("peso")));
+			}
+			
+			conn.close();
+			return adiacenze;
+			
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return null;
+		}
+		
 	}
 	
 }
